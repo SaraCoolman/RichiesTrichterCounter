@@ -12,6 +12,7 @@
       text-align: center;
       background: linear-gradient(135deg, #ffb347, #ffcc33);
       color: #8b0000;
+      overflow-x: hidden;
     }
 
     h1 {
@@ -69,168 +70,235 @@
     .pop {
       animation: pop 0.4s ease;
     }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+    }
   </style>
 </head>
 
 <body>
 
-  <h1>🎸 Nova Rock Trichter Counter 🍺</h1>
-  <h2>Bist du der nächste Trichter Alexander Hold?</h2>
+<canvas id="confetti"></canvas>
 
-  <img src="dein-bild.jpg" alt="Party Bild">
+<h1>🎸 Nova Rock Trichter Counter 🍺</h1>
+<h2>Bist du der nächste Trichter Alexander Hold?</h2>
 
-  <input id="nameInput" placeholder="Spieler Name">
-  <button onclick="addPlayer()">Spieler hinzufügen</button>
-  <button class="alarmBtn" onclick="toggleAlarm()">🚨 Trink Alarm</button>
+<img src="dein-bild.jpg" alt="Party Bild">
 
-  <div id="message"></div>
+<input id="nameInput" placeholder="Spieler Name">
+<button onclick="addPlayer()">Spieler hinzufügen</button>
+<button class="alarmBtn" onclick="toggleAlarm()">🚨 Trink Alarm</button>
 
-  <div id="players"></div>
+<div id="message"></div>
+<div id="players"></div>
 
-  <!-- Sounds -->
-  <audio id="trichterSound" src="trichterSound.mp3"></audio>
-  <audio id="alarmSound" src="alarmSound.mp3"></audio>
+<audio id="trichterSound" src="trichterSound.mp3"></audio>
+<audio id="alarmSound" src="alarmSound.mp3"></audio>
 
-  <script>
-    let players = JSON.parse(localStorage.getItem("players") || "[]");
+<script>
+let players = JSON.parse(localStorage.getItem("players") || "[]");
+let alarmActive = JSON.parse(localStorage.getItem("alarmActive") || "false");
+let alarmTriggered = false;
+let lastTime = parseInt(localStorage.getItem("lastTime") || Date.now(), 10);
 
-    let alarmActive = JSON.parse(localStorage.getItem("alarmActive") || "false");
-    let alarmTriggered = false;
+const trichterSound = document.getElementById("trichterSound");
+const alarmSound = document.getElementById("alarmSound");
 
-    let lastTime = parseInt(localStorage.getItem("lastTime") || Date.now(), 10);
+const funnyTexts = [
+      "🍺 Du Trichter-Legende!",
+      "🔥 I glaub es eskaliert komplett!",
+      "💀 Saufa Saufa Saufa?!",
+      "🍻 Da Hund is zua!",
+      "🚀 Du bist die Trichter Königin!",
+      "🎉 So schnö hot nu nie wer trichtert",
+      "🍾 Trichter schmeckt einfach gut",
+      "🥴 Bitte ned speibn",
+      "⚡ Des geht nu schnölla oder?",
+      "🧠 Trichterin Barbara Salesch!",
+      "🏆 Saufa und vü Raucha",
+      "🔥 Einfach Orangensaft",
+      "🍻 Frag nicht was für Saft!",
+      "💅 Slay Bitch",
+      "💥 Bist du da Wirtshausfraunz?!"
+	  "💥 Spast!"
+	  "🥴 Wer trichtert so schnell durch Nacht und Wind?",
+];
 
-    const trichterSound = document.getElementById("trichterSound");
-    const alarmSound = document.getElementById("alarmSound");
+function playSound(audio) {
+  audio.pause();
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
 
-    const funnyTexts = [
-      "🍺 Legendärer Trichter!",
-      "🔥 Das eskaliert gerade!",
-      "💀 Wer hat dir das erlaubt?!",
-      "🍻 Festival-Level erreicht!",
-      "🚀 Du bist nicht mehr zu stoppen!"
-    ];
+/* ---------------- CONFETTI ---------------- */
 
-    function playSound(audio) {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
+const canvas = document.getElementById("confetti");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let confetti = [];
+
+function spawnConfetti() {
+  for (let i = 0; i < 120; i++) {
+    confetti.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      r: Math.random() * 6 + 2,
+      d: Math.random() * 100,
+      color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+      tilt: Math.random() * 10 - 10
+    });
+  }
+}
+
+function drawConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  confetti.forEach((c, i) => {
+    ctx.beginPath();
+    ctx.fillStyle = c.color;
+    ctx.fillRect(c.x, c.y, c.r, c.r);
+
+    c.y += 3;
+    c.x += Math.sin(c.d);
+
+    if (c.y > canvas.height) {
+      confetti.splice(i, 1);
     }
+  });
 
-    function save() {
-      localStorage.setItem("players", JSON.stringify(players));
-      localStorage.setItem("lastTime", lastTime);
-      localStorage.setItem("alarmActive", JSON.stringify(alarmActive));
-    }
+  requestAnimationFrame(drawConfetti);
+}
 
-    function addPlayer() {
-      const input = document.getElementById("nameInput");
-      const name = input.value.trim();
-      if (!name) return;
+drawConfetti();
 
-      players.push({ name, count: 0 });
-      input.value = "";
+/* ---------------- APP LOGIC ---------------- */
 
-      save();
-      render();
-    }
+function save() {
+  localStorage.setItem("players", JSON.stringify(players));
+  localStorage.setItem("lastTime", lastTime);
+  localStorage.setItem("alarmActive", JSON.stringify(alarmActive));
+}
 
-    function deletePlayer(i) {
-      players.splice(i, 1);
-      save();
-      render();
-    }
+function addPlayer() {
+  const input = document.getElementById("nameInput");
+  const name = input.value.trim();
+  if (!name) return;
 
-    function resetPlayer(i) {
-      players[i].count = 0;
-      save();
-      render();
-    }
+  players.push({ name, count: 0 });
+  input.value = "";
 
-    function addTrichter(i) {
-      players[i].count++;
-      lastTime = Date.now();
+  save();
+  render();
+}
 
-      playSound(trichterSound);
+function deletePlayer(i) {
+  players.splice(i, 1);
+  save();
+  render();
+}
 
-      // 🔥 5er Event
-      if (players[i].count % 5 === 0) {
-        triggerFiveEvent(i);
-      }
+function resetPlayer(i) {
+  players[i].count = 0;
+  save();
+  render();
+}
 
-      save();
-      render();
-    }
+function showMessage(text) {
+  const msg = document.getElementById("message");
+  msg.innerText = text;
 
-    function triggerFiveEvent(i) {
-      const msg = document.getElementById("message");
-      const text = funnyTexts[Math.floor(Math.random() * funnyTexts.length)];
+  setTimeout(() => msg.innerText = "", 2500);
+}
 
-      msg.innerText = text;
+function addTrichter(i) {
+  players[i].count++;
+  lastTime = Date.now();
 
-      const el = document.getElementsByClassName("player")[i];
-      if (el) {
-        el.classList.add("pop");
-        setTimeout(() => el.classList.remove("pop"), 400);
-      }
+  playSound(trichterSound);
 
-      setTimeout(() => {
-        msg.innerText = "";
-      }, 3000);
-    }
+  showMessage(funnyTexts[Math.floor(Math.random() * funnyTexts.length)]);
 
-    function toggleAlarm() {
-      alarmActive = !alarmActive;
+  spawnConfetti(); // 🎉 KONFETTI
 
-      save();
+  if (navigator.vibrate) navigator.vibrate(200);
 
-      if (alarmActive) {
-        alarmTriggered = false;
-      } else {
-        alarmSound.pause();
-      }
-    }
+  if (players[i].count % 1 === 0) {
+    showMessage("🔥 5er Bonus! Eskalation!");
+    spawnConfetti();
+  }
 
-    function render() {
-      const container = document.getElementById("players");
-      container.innerHTML = "";
+  save();
+  render();
+}
 
-      players.forEach((p, i) => {
-        container.innerHTML += `
-          <div class="player">
-            🍺 ${p.name} — ${p.count} Trichter<br>
-            <button class="addBtn" onclick="addTrichter(${i})">+1</button>
-            <button class="resetBtn" onclick="resetPlayer(${i})">Reset</button>
-            <button class="delBtn" onclick="deletePlayer(${i})">X</button>
-          </div>
-        `;
-      });
-    }
+function toggleAlarm() {
+  alarmActive = !alarmActive;
+  save();
 
-    setInterval(() => {
-      let now = Date.now();
-      let diff = 1800000 - (now - lastTime);
+  if (alarmActive) {
+    alarmTriggered = false;
+    playSound(alarmSound);
+    showMessage("🚨 Trink Alarm aktiviert!");
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  } else {
+    alarmSound.pause();
+    alarmSound.currentTime = 0;
+    showMessage("⛔ Trink Alarm deaktiviert!");
+  }
+}
 
-      if (diff < 0) diff = 0;
+function render() {
+  const container = document.getElementById("players");
+  container.innerHTML = "";
 
-      if (diff === 0 && !alarmTriggered && alarmActive) {
-        alarmTriggered = true;
-        playSound(alarmSound);
-        document.getElementById("message").innerText =
-          "🚨 ZEIT FÜR EINEN TRICHTER! 🍺";
+  players.forEach((p, i) => {
+    container.innerHTML += `
+      <div class="player">
+        🍺 ${p.name} — ${p.count} Trichter<br>
+        <button class="addBtn" onclick="addTrichter(${i})">+1</button>
+        <button class="resetBtn" onclick="resetPlayer(${i})">Reset</button>
+        <button class="delBtn" onclick="deletePlayer(${i})">X</button>
+      </div>
+    `;
+  });
+}
 
-        setTimeout(() => {
-          document.getElementById("message").innerText = "";
-        }, 3000);
-      }
+/* ---------------- TIMER (30 MIN) ---------------- */
 
-      if (diff > 0) {
-        alarmTriggered = false;
-      }
+setInterval(() => {
+  let now = Date.now();
+  let diff = 1800000 - (now - lastTime);
 
-    }, 1000);
+  if (diff <= 0 && !alarmTriggered && alarmActive) {
+    alarmTriggered = true;
 
-    render();
-  </script>
+    playSound(alarmSound);
+    spawnConfetti();
+
+    document.getElementById("message").innerText =
+      "🍺 Host du scho a hoibe Stund kan Trichter mehr drunga";
+
+    setTimeout(() => {
+      document.getElementById("message").innerText = "";
+    }, 5000);
+  }
+
+  if (diff > 0) {
+    alarmTriggered = false;
+  }
+
+}, 1000);
+
+render();
+</script>
 
 </body>
 </html>
