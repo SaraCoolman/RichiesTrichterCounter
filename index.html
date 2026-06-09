@@ -69,6 +69,11 @@
       font-size: 6vw;
       margin: 10px;
     }
+
+    #message {
+      font-size: 5vw;
+      min-height: 40px;
+    }
   </style>
 </head>
 
@@ -79,15 +84,13 @@
 
   <img src="dein-bild.jpg" alt="Party Bild">
 
-  <div id="timer">30:00</div>
-
-  <br>
+  <div id="timer" style="display:none;">30:00</div>
+  <div id="message"></div>
 
   <input id="nameInput" placeholder="Spieler Name">
   <button onclick="addPlayer()">Spieler hinzufügen</button>
 
   <button class="alarmBtn" onclick="toggleAlarm()">🚨 Trink Alarm</button>
-  <button class="alarmBtn" onclick="manualAlarm()">🚨 Alarm manuell</button>
 
   <div id="players"></div>
 
@@ -151,13 +154,18 @@
       }
     }
 
-    function manualAlarm() {
-      playSound(alarmSound);
-    }
-
     function render() {
       const container = document.getElementById("players");
       container.innerHTML = "";
+
+      // ❗ NICHTS anzeigen wenn keine Spieler
+      if (players.length === 0) {
+        document.getElementById("timer").style.display = "none";
+        document.getElementById("message").innerText = "";
+        return;
+      }
+
+      document.getElementById("timer").style.display = "block";
 
       players.forEach((p, i) => {
         container.innerHTML += `
@@ -172,6 +180,8 @@
     }
 
     setInterval(() => {
+      if (players.length === 0) return;
+
       let now = Date.now();
       let diff = 1800000 - (now - lastTime);
 
@@ -185,8 +195,11 @@
 
       if (diff === 0 && !alarmTriggered && alarmActive) {
         alarmTriggered = true;
+
+        document.getElementById("message").innerText =
+          "🚨 ZEIT FÜR EINEN TRICHTER! 🍺";
+
         playSound(alarmSound);
-        alert("🚨 Hobts a hoibe Stunde kan Trichter drunga?! Frechheit! 🍺");
       }
 
       if (diff > 0) {
