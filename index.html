@@ -17,11 +17,13 @@
     h1 {
       font-size: 7vw;
       margin-top: 15px;
+      color: #8b0000;
     }
 
     h2 {
       font-size: 4.5vw;
       font-weight: normal;
+      color: #8b0000;
     }
 
     img {
@@ -37,10 +39,20 @@
       margin: 5px;
     }
 
-    #timer {
-      font-size: 6vw;
-      margin: 10px;
+    .player {
+      background: rgba(255, 255, 255, 0.7);
+      margin: 10px auto;
+      padding: 10px;
+      width: 85%;
+      border-radius: 10px;
+      font-size: 5vw;
+      transition: transform 0.2s;
     }
+
+    .addBtn { background: #ff4500; color: white; border: none; border-radius: 10px; }
+    .delBtn { background: crimson; color: white; border: none; border-radius: 10px; }
+    .resetBtn { background: gray; color: white; border: none; border-radius: 10px; }
+    .alarmBtn { background: #cc5500; color: white; border: none; border-radius: 10px; }
 
     #message {
       font-size: 5vw;
@@ -48,19 +60,15 @@
       margin-top: 10px;
     }
 
-    .player {
-      background: rgba(255,255,255,0.7);
-      margin: 10px auto;
-      padding: 10px;
-      width: 85%;
-      border-radius: 10px;
-      font-size: 5vw;
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
     }
 
-    .addBtn { background: #ff4500; color: white; border: none; border-radius: 10px; }
-    .delBtn { background: crimson; color: white; border: none; border-radius: 10px; }
-    .resetBtn { background: gray; color: white; border: none; border-radius: 10px; }
-    .alarmBtn { background: #cc5500; color: white; border: none; border-radius: 10px; }
+    .pop {
+      animation: pop 0.4s ease;
+    }
   </style>
 </head>
 
@@ -71,243 +79,158 @@
 
   <img src="dein-bild.jpg" alt="Party Bild">
 
-  <div id="timer">30:00</div>
-  <div id="message"></div>
-
   <input id="nameInput" placeholder="Spieler Name">
   <button onclick="addPlayer()">Spieler hinzufügen</button>
-
   <button class="alarmBtn" onclick="toggleAlarm()">🚨 Trink Alarm</button>
+
+  <div id="message"></div>
 
   <div id="players"></div>
 
   <!-- Sounds -->
-  <audio id="trichterSound" src="trichterSound.mp3" preload="auto"></audio>
-  <audio id="alarmSound" src="alarmSound.mp3" preload="auto"></audio>
+  <audio id="trichterSound" src="trichterSound.mp3"></audio>
+  <audio id="alarmSound" src="alarmSound.mp3"></audio>
 
-<script>
-/* =========================
-   SAFE INITIAL STATE
-========================= */
+  <script>
+    let players = JSON.parse(localStorage.getItem("players") || "[]");
 
-let players = [];
-let alarmActive = false;
-let alarmTriggered = false;
-let lastTime = Date.now();
+    let alarmActive = JSON.parse(localStorage.getItem("alarmActive") || "false");
+    let alarmTriggered = false;
 
-/* =========================
-   SAFE LOAD STORAGE
-========================= */
+    let lastTime = parseInt(localStorage.getItem("lastTime") || Date.now(), 10);
 
-try {
-  const p = JSON.parse(localStorage.getItem("players"));
-  if (Array.isArray(p)) players = p;
-} catch {}
+    const trichterSound = document.getElementById("trichterSound");
+    const alarmSound = document.getElementById("alarmSound");
 
-const savedAlarm = localStorage.getItem("alarmActive");
-if (savedAlarm === "true") alarmActive = true;
+    const funnyTexts = [
+      "🍺 Legendärer Trichter!",
+      "🔥 Das eskaliert gerade!",
+      "💀 Wer hat dir das erlaubt?!",
+      "🍻 Festival-Level erreicht!",
+      "🚀 Du bist nicht mehr zu stoppen!"
+    ];
 
-const savedTime = Number(localStorage.getItem("lastTime"));
-if (!isNaN(savedTime) && savedTime > 0) {
-  lastTime = savedTime;
-}
-
-/* =========================
-   ELEMENTS
-========================= */
-
-const trichterSound = document.getElementById("trichterSound");
-const alarmSound = document.getElementById("alarmSound");
-
-/* =========================
-   SAFE SOUND
-========================= */
-
-function playSound(audio) {
-  if (!audio) return;
-
-  try {
-    audio.pause();
-    audio.currentTime = 0;
-    const p = audio.play();
-    if (p) p.catch(() => {});
-  } catch {}
-}
-
-/* =========================
-   SAVE
-========================= */
-
-function save() {
-  try {
-    localStorage.setItem("players", JSON.stringify(players));
-    localStorage.setItem("lastTime", String(lastTime));
-    localStorage.setItem("alarmActive", String(alarmActive));
-  } catch {}
-}
-
-/* =========================
-   PLAYER ACTIONS
-========================= */
-
-function addPlayer() {
-  const input = document.getElementById("nameInput");
-  if (!input) return;
-
-  const name = input.value.trim();
-  if (!name) return;
-
-  players.push({ name, count: 0 });
-
-  input.value = "";
-
-  save();
-  render();
-}
-
-function deletePlayer(i) {
-  players.splice(i, 1);
-  save();
-  render();
-}
-
-function resetPlayer(i) {
-  players[i].count = 0;
-  save();
-  render();
-}
-
-/* =========================
-   TRICHTER ACTION
-========================= */
-
-function addTrichter(i) {
-  if (!players[i]) return;
-
-  players[i].count++;
-  lastTime = Date.now();
-
-  playSound(trichterSound);
-
-  if (navigator.vibrate) {
-    navigator.vibrate(150);
-  }
-
-  const texts = [
-      "🍺 Du Trichter-Legende!",
-      "🔥 I glaub es eskaliert komplett!",
-      "💀 Saufa Saufa Saufa?!",
-      "🍻 Da Hund is zua!",
-      "🚀 Du bist die Trichter Königin!",
-      "🎉 So schnö hot nu nie wer trichtert",
-      "🍾 Trichter schmeckt einfach gut",
-      "🥴 Bitte ned speibn",
-      "⚡ Des geht nu schnölla oder?",
-      "🧠 Trichterin Barbara Salesch!",
-      "🏆 Saufa und vü Raucha",
-      "🔥 Einfach Orangensaft",
-      "🍻 Frag nicht was für Saft!",
-      "💅 Slay Bitch",
-      "💥 Bist du da Wirtshausfraunz?!"
-	  "💥 Spast!"
-	  "🥴 Wer trichtert so schnell durch Nacht und Wind?",
-  ];
-
-  const msg = document.getElementById("message");
-  msg.innerText = texts[Math.floor(Math.random() * texts.length)];
-
-  setTimeout(() => {
-    msg.innerText = "";
-  }, 2000);
-
-  save();
-  render();
-}
-
-/* =========================
-   ALARM
-========================= */
-
-function toggleAlarm() {
-  alarmActive = !alarmActive;
-
-  if (alarmActive) {
-    playSound(alarmSound);
-  } else {
-    try {
-      alarmSound.pause();
-      alarmSound.currentTime = 0;
-    } catch {}
-  }
-
-  save();
-}
-
-/* =========================
-   RENDER SAFE
-========================= */
-
-function render() {
-  const container = document.getElementById("players");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  if (players.length === 0) return;
-
-  players.forEach((p, i) => {
-    container.innerHTML += `
-      <div class="player">
-        🍺 ${p.name} — ${p.count} Trichter<br>
-        <button class="addBtn" onclick="addTrichter(${i})">+1</button>
-        <button class="resetBtn" onclick="resetPlayer(${i})">Reset</button>
-        <button class="delBtn" onclick="deletePlayer(${i})">X</button>
-      </div>
-    `;
-  });
-}
-
-/* =========================
-   TIMER (SAFE)
-========================= */
-
-setInterval(() => {
-  const now = Date.now();
-  const diff = Math.max(0, 1800000 - (now - lastTime));
-
-  const min = Math.floor(diff / 60000);
-  const sec = Math.floor((diff % 60000) / 1000);
-
-  const timer = document.getElementById("timer");
-  if (timer) {
-    timer.innerText = `${min}:${sec.toString().padStart(2, "0")}`;
-  }
-
-  if (diff === 0 && alarmActive && !alarmTriggered) {
-    alarmTriggered = true;
-
-    playSound(alarmSound);
-
-    const msg = document.getElementById("message");
-    if (msg) {
-      msg.innerText = "🚨 ZEIT FÜR EINEN TRICHTER!";
-      setTimeout(() => msg.innerText = "", 3000);
+    function playSound(audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
     }
-  }
 
-  if (diff > 0) {
-    alarmTriggered = false;
-  }
+    function save() {
+      localStorage.setItem("players", JSON.stringify(players));
+      localStorage.setItem("lastTime", lastTime);
+      localStorage.setItem("alarmActive", JSON.stringify(alarmActive));
+    }
 
-}, 1000);
+    function addPlayer() {
+      const input = document.getElementById("nameInput");
+      const name = input.value.trim();
+      if (!name) return;
 
-/* =========================
-   INIT
-========================= */
+      players.push({ name, count: 0 });
+      input.value = "";
 
-render();
+      save();
+      render();
+    }
 
-</script>
+    function deletePlayer(i) {
+      players.splice(i, 1);
+      save();
+      render();
+    }
+
+    function resetPlayer(i) {
+      players[i].count = 0;
+      save();
+      render();
+    }
+
+    function addTrichter(i) {
+      players[i].count++;
+      lastTime = Date.now();
+
+      playSound(trichterSound);
+
+      // 🔥 5er Event
+      if (players[i].count % 5 === 0) {
+        triggerFiveEvent(i);
+      }
+
+      save();
+      render();
+    }
+
+    function triggerFiveEvent(i) {
+      const msg = document.getElementById("message");
+      const text = funnyTexts[Math.floor(Math.random() * funnyTexts.length)];
+
+      msg.innerText = text;
+
+      const el = document.getElementsByClassName("player")[i];
+      if (el) {
+        el.classList.add("pop");
+        setTimeout(() => el.classList.remove("pop"), 400);
+      }
+
+      setTimeout(() => {
+        msg.innerText = "";
+      }, 3000);
+    }
+
+    function toggleAlarm() {
+      alarmActive = !alarmActive;
+
+      save();
+
+      if (alarmActive) {
+        alarmTriggered = false;
+      } else {
+        alarmSound.pause();
+      }
+    }
+
+    function render() {
+      const container = document.getElementById("players");
+      container.innerHTML = "";
+
+      players.forEach((p, i) => {
+        container.innerHTML += `
+          <div class="player">
+            🍺 ${p.name} — ${p.count} Trichter<br>
+            <button class="addBtn" onclick="addTrichter(${i})">+1</button>
+            <button class="resetBtn" onclick="resetPlayer(${i})">Reset</button>
+            <button class="delBtn" onclick="deletePlayer(${i})">X</button>
+          </div>
+        `;
+      });
+    }
+
+    setInterval(() => {
+      let now = Date.now();
+      let diff = 1800000 - (now - lastTime);
+
+      if (diff < 0) diff = 0;
+
+      if (diff === 0 && !alarmTriggered && alarmActive) {
+        alarmTriggered = true;
+        playSound(alarmSound);
+        document.getElementById("message").innerText =
+          "🚨 ZEIT FÜR EINEN TRICHTER! 🍺";
+
+        setTimeout(() => {
+          document.getElementById("message").innerText = "";
+        }, 3000);
+      }
+
+      if (diff > 0) {
+        alarmTriggered = false;
+      }
+
+    }, 1000);
+
+    render();
+  </script>
 
 </body>
 </html>
