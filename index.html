@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>TrichterAlexanderHold</title>
+  <title>Nova Rock Trichter Counter</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -10,14 +10,30 @@
       margin: 0;
       font-family: Arial, sans-serif;
       text-align: center;
-      background: #ffd1dc;
-      color: #111;
+
+      /* 🟠 neues Design */
+      background: linear-gradient(135deg, #ffb347, #ffcc33);
+      color: #8b0000;
     }
 
     h1 {
       font-size: 7vw;
-      color: #87cefa;
-      margin-top: 20px;
+      margin-top: 15px;
+      color: #8b0000;
+    }
+
+    h2 {
+      font-size: 4.5vw;
+      font-weight: normal;
+      color: #8b0000;
+      margin-bottom: 10px;
+    }
+
+    img {
+      width: 60%;
+      max-width: 250px;
+      border-radius: 15px;
+      margin: 10px;
     }
 
     input, button {
@@ -27,16 +43,25 @@
     }
 
     .player {
-      background: white;
+      background: rgba(255, 255, 255, 0.7);
       margin: 10px auto;
       padding: 10px;
       width: 80%;
       border-radius: 10px;
       font-size: 5vw;
+      color: #8b0000;
     }
 
     .addBtn {
-      background: limegreen;
+      background: #ff4500;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .alarmBtn {
+      background: #cc5500;
       color: white;
       border: none;
       padding: 10px;
@@ -47,25 +72,51 @@
 
 <body>
 
-  <h1>🍺 TrichterAlexanderHold 🍺</h1>
+  <h1>🎸 Nova Rock Trichter Counter 🍺</h1>
+  <h2>Bist du der nächste Trichter Alexander Hold?</h2>
+
+  <img src="dein-bild.jpg" alt="Party Bild">
+
+  <br>
 
   <input id="nameInput" placeholder="Spieler Name">
   <button onclick="addPlayer()">Spieler hinzufügen</button>
+  <button class="alarmBtn" onclick="toggleAlarm()">🚨 Trink Alarm</button>
 
   <div id="players"></div>
 
+  <!-- Sounds -->
+  <audio id="trichterSound" src="trichterSound.mp3"></audio>
+  <audio id="alarmSound" src="alarmSound.mp3"></audio>
+
   <script>
     let players = JSON.parse(localStorage.getItem("players") || "[]");
+
+    let alarmActive = false;
+    let alarmTriggered = false;
+    let lastTime = Date.now();
+
+    const trichterSound = document.getElementById("trichterSound");
+    const alarmSound = document.getElementById("alarmSound");
+
+    function playSound(audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
 
     function save() {
       localStorage.setItem("players", JSON.stringify(players));
     }
 
     function addPlayer() {
-      const name = document.getElementById("nameInput").value.trim();
+      const input = document.getElementById("nameInput");
+      const name = input.value.trim();
+
       if (!name) return;
 
       players.push({ name: name, count: 0 });
+      input.value = "";
 
       save();
       render();
@@ -74,8 +125,26 @@
     function addTrichter(index) {
       players[index].count++;
 
+      lastTime = Date.now();
+
+      playSound(trichterSound);
+
       save();
       render();
+    }
+
+    function toggleAlarm() {
+      if (alarmActive) {
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+        alarmActive = false;
+        return;
+      }
+
+      alarmActive = true;
+      alarmTriggered = false;
+
+      playSound(alarmSound);
     }
 
     function render() {
@@ -86,11 +155,31 @@
         container.innerHTML += `
           <div class="player">
             🍺 ${p.name} — ${p.count} Trichter<br>
-            <button class="addBtn" onclick="addTrichter(${i})">+1 Trichter</button>
+            <button class="addBtn" onclick="addTrichter(${i})">
+              +1 Trichter
+            </button>
           </div>
         `;
       });
     }
+
+    setInterval(() => {
+      let now = Date.now();
+      let diff = 1800000 - (now - lastTime);
+
+      if (diff < 0) diff = 0;
+
+      if (diff === 0 && !alarmTriggered && alarmActive) {
+        alarmTriggered = true;
+        playSound(alarmSound);
+        alert("🚨 Hobts a hoibe Stunde kan Trichter gsoffn? Frechheit! ALARM! 🍺");
+      }
+
+      if (diff > 0) {
+        alarmTriggered = false;
+      }
+
+    }, 1000);
 
     render();
   </script>
