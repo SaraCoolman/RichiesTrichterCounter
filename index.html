@@ -167,7 +167,7 @@
 
     function triggerFiveEvent(i) {
       const msg = document.getElementById("message");
-      msg.innerText = "🎉 5er TRICHTER BONUS!";
+      msg.innerText = "🎉 5 TRICHTER BONUS!";
 
       const el = document.getElementsByClassName("player")[i];
       if (el) {
@@ -211,7 +211,9 @@
     function toggleAlarm() {
       alarmActive = !alarmActive;
 
-      if (!alarmActive) {
+      if (alarmActive) {
+        playSound(alarmSound); // 🔊 Sound beim Einschalten
+      } else {
         alarmSound.pause();
         alarmSound.currentTime = 0;
       }
@@ -249,6 +251,7 @@
 
       if (diff === 0 && alarmActive && !alarmTriggered) {
         alarmTriggered = true;
+
         playSound(alarmSound);
 
         document.getElementById("message").innerText =
