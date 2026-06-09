@@ -15,60 +15,32 @@
     }
 
     h1 {
-      font-size: 8vw;
-      margin-top: 20px;
-      color: #87cefa;
-    }
-
-    img {
-      width: 60%;
-      max-width: 250px;
-      margin: 20px auto;
-      border-radius: 20px;
-    }
-
-    #count {
-      font-size: 20vw;
-      margin: 10px;
-      font-weight: bold;
-    }
-
-    #timer {
       font-size: 7vw;
-      margin-top: 10px;
-      color: #ff8c00;
+      color: #87cefa;
+      margin-top: 20px;
     }
 
-    #message {
-      font-size: 6vw;
-      color: #ff1493;
-      min-height: 40px;
+    input, button {
+      font-size: 4vw;
+      padding: 10px;
+      margin: 5px;
     }
 
-    button {
+    .player {
+      background: white;
+      margin: 10px auto;
+      padding: 10px;
       width: 80%;
-      max-width: 300px;
+      border-radius: 10px;
       font-size: 5vw;
-      margin: 10px;
-      padding: 15px;
-      border: none;
-      border-radius: 15px;
-      cursor: pointer;
     }
 
-    .add {
+    .addBtn {
       background: limegreen;
       color: white;
-    }
-
-    .alarm {
-      background: orange;
-      color: white;
-    }
-
-    .reset {
-      background: crimson;
-      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
     }
   </style>
 </head>
@@ -77,134 +49,50 @@
 
   <h1>🍺 TrichterAlexanderHold 🍺</h1>
 
-  <img src="dein-bild.jpg" alt="Trichter Bild">
+  <input id="nameInput" placeholder="Spieler Name">
+  <button onclick="addPlayer()">Spieler hinzufügen</button>
 
-  <div>🍺 Trichter</div>
-  <div id="count">0</div>
-
-  <div id="timer">30:00</div>
-  <div id="message"></div>
-
-  <button class="add" onclick="addTrichter()">+1 Trichter</button>
-  <button class="alarm" onclick="toggleAlarm()">🚨 Alarm</button>
-  <button class="reset" onclick="resetAll()">Reset</button>
-
-  <audio id="trichterSound" src="trichterSound.mp3"></audio>
-  <audio id="alarmSound" src="alarmSound.mp3"></audio>
+  <div id="players"></div>
 
   <script>
-    let count = parseInt(localStorage.getItem("trichterAlexanderHold") || "0", 10);
-    let lastTrichterTime = parseInt(
-      localStorage.getItem("lastTrichterTime") || Date.now(),
-      10
-    );
+    let players = JSON.parse(localStorage.getItem("players") || "[]");
 
-    let alarmActive = false;
-    let alarmTriggered = false;
-    let messageTimeout = null;
-
-    const trichterSound = document.getElementById("trichterSound");
-    const alarmSound = document.getElementById("alarmSound");
-
-    document.getElementById("count").innerText = count;
-
-    function playSound(audio) {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
+    function save() {
+      localStorage.setItem("players", JSON.stringify(players));
     }
 
-    function stopAlarm() {
-      alarmSound.pause();
-      alarmSound.currentTime = 0;
-      alarmActive = false;
-      alarmTriggered = false;
+    function addPlayer() {
+      const name = document.getElementById("nameInput").value.trim();
+      if (!name) return;
+
+      players.push({ name: name, count: 0 });
+
+      save();
+      render();
     }
 
-    function addTrichter() {
-      count++;
-      lastTrichterTime = Date.now();
+    function addTrichter(index) {
+      players[index].count++;
 
-      stopAlarm();
-      playSound(trichterSound);
-
-      update();
-
-      localStorage.setItem("trichterAlexanderHold", count);
-      localStorage.setItem("lastTrichterTime", lastTrichterTime);
+      save();
+      render();
     }
 
-    function toggleAlarm() {
-      if (alarmActive) {
-        stopAlarm();
-        return;
-      }
+    function render() {
+      const container = document.getElementById("players");
+      container.innerHTML = "";
 
-      alarmActive = true;
-      alarmTriggered = false;
-
-      playSound(alarmSound);
+      players.forEach((p, i) => {
+        container.innerHTML += `
+          <div class="player">
+            🍺 ${p.name} — ${p.count} Trichter<br>
+            <button class="addBtn" onclick="addTrichter(${i})">+1 Trichter</button>
+          </div>
+        `;
+      });
     }
 
-    function resetAll() {
-      count = 0;
-      lastTrichterTime = Date.now();
-
-      stopAlarm();
-
-      document.getElementById("message").innerText = "";
-
-      update();
-
-      localStorage.setItem("trichterAlexanderHold", count);
-      localStorage.setItem("lastTrichterTime", lastTrichterTime);
-    }
-
-    function update() {
-      document.getElementById("count").innerText = count;
-
-      if (count !== 0 && count % 5 === 0) {
-        const msg = document.getElementById("message");
-
-        msg.innerText = "🍺 Zeit für den nächsten Trichter!";
-
-        if (messageTimeout) {
-          clearTimeout(messageTimeout);
-        }
-
-        messageTimeout = setTimeout(() => {
-          msg.innerText = "";
-        }, 3000);
-      }
-    }
-
-    setInterval(() => {
-      let now = Date.now();
-      let diff = 1800000 - (now - lastTrichterTime);
-
-      if (diff < 0) diff = 0;
-
-      let minutes = Math.floor(diff / 60000);
-      let seconds = Math.floor((diff % 60000) / 1000);
-
-      document.getElementById("timer").innerText =
-        `${minutes}:${seconds.toString().padStart(2, "0")}`;
-
-      if (diff === 0 && !alarmTriggered && alarmActive) {
-        alarmTriggered = true;
-
-        document.getElementById("message").innerText =
-          "🚨 Zeit für einen Trichter! 🍺";
-
-        playSound(alarmSound);
-      }
-
-      if (diff > 0) {
-        alarmTriggered = false;
-      }
-    }, 1000);
-
-    update();
+    render();
   </script>
 
 </body>
