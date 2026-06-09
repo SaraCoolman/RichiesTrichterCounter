@@ -63,33 +63,25 @@
 
 <body>
 
-  <h1>🍺 Nova Rock Trichter Counter 🍺</h1>
+  <h1>Nova Rock Trichter Counter 🍺</h1>
   <h2>Bist du der nächste Trichter Alexander Hold?</h2>
 
   <img src="dein-bild.jpg" alt="Party Bild">
 
   <input id="nameInput" placeholder="Spieler Name">
   <button onclick="addPlayer()">Spieler hinzufügen</button>
-  <button class="alarmBtn" onclick="toggleAlarm()">🚨 Trink Alarm</button>
 
   <div id="message"></div>
+
   <div id="players"></div>
 
   <!-- Sounds -->
   <audio id="trichterSound" src="trichterSound.mp3"></audio>
-  <audio id="alarmSound" src="alarmSound.mp3"></audio>
 
 <script>
 let players = JSON.parse(localStorage.getItem("players") || "[]");
 
-let alarmActive = JSON.parse(localStorage.getItem("alarmActive") || "false");
-let alarmTriggered = false;
-
-let lastTime = parseInt(localStorage.getItem("lastTime") || Date.now(), 10);
-let startTime = parseInt(localStorage.getItem("startTime") || Date.now(), 10);
-
 const trichterSound = document.getElementById("trichterSound");
-const alarmSound = document.getElementById("alarmSound");
 
 const funnyTexts = [
       "🍺 Du Trichter-Legende!",
@@ -104,9 +96,12 @@ const funnyTexts = [
       "🧠 Trichterin Barbara Salesch!",
       "🏆 Saufa und vü Raucha",
       "🔥 Einfach Orangensaft",
+	  "💥 Spast!"
+	  "💥 Trichter einidreschn!"
       "🍻 Frag nicht was für Saft!",
       "💅 Slay Bitch",
       "💥 Bist du da Wirtshausfraunz?!"
+	  "🥴 ich muss rauuus",
 	  "💥 Spast!"
 	  "🥴 Wer trichtert so schnell durch Nacht und Wind?",
 ];
@@ -132,9 +127,6 @@ function showMessage(text) {
 
 function save() {
   localStorage.setItem("players", JSON.stringify(players));
-  localStorage.setItem("lastTime", lastTime);
-  localStorage.setItem("startTime", startTime);
-  localStorage.setItem("alarmActive", JSON.stringify(alarmActive));
 }
 
 function addPlayer() {
@@ -163,8 +155,6 @@ function resetPlayer(i) {
 
 function addTrichter(i) {
   players[i].count++;
-  lastTime = Date.now();
-  startTime = Date.now(); // reset 30-min timer
 
   playSound(trichterSound);
 
@@ -175,21 +165,6 @@ function addTrichter(i) {
   render();
 }
 
-function toggleAlarm() {
-  alarmActive = !alarmActive;
-  save();
-
-  if (alarmActive) {
-    alarmTriggered = false;
-    playSound(alarmSound);
-    showMessage("🚨 Trink Alarm aktiviert!");
-  } else {
-    alarmSound.pause();
-    alarmSound.currentTime = 0;
-    showMessage("⛔ Trink Alarm deaktiviert!");
-  }
-}
-
 function render() {
   const container = document.getElementById("players");
   container.innerHTML = "";
@@ -198,33 +173,13 @@ function render() {
     container.innerHTML += `
       <div class="player">
         🍺 ${p.name} — ${p.count} Trichter<br>
-        <button class="addBtn" onclick="addTrichter(${i})">+1 🍺</button>
+        <button class="addBtn" onclick="addTrichter(${i})">+1</button>
         <button class="resetBtn" onclick="resetPlayer(${i})">Reset</button>
         <button class="delBtn" onclick="deletePlayer(${i})">X</button>
       </div>
     `;
   });
 }
-
-/* ⏱️ 30 MIN SAUF TIMER */
-setInterval(() => {
-  if (!alarmActive) return;
-
-  const now = Date.now();
-  const diff = now - startTime;
-
-  if (diff >= 1800000 && !alarmTriggered) {
-    alarmTriggered = true;
-
-    playSound(alarmSound);
-    showMessage("⏰ 30 Minuten vorbei – Zeit für den nächsten Trichter! 🍺");
-  }
-
-  if (diff < 1800000) {
-    alarmTriggered = false;
-  }
-
-}, 1000);
 
 render();
 </script>
