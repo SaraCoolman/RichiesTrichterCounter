@@ -109,22 +109,26 @@
     const trichterSound = document.getElementById("trichterSound");
     const alarmSound = document.getElementById("alarmSound");
 
-    const funnyTexts = [
-      "🍺 Du Trichter Legende!",
-      "🔥 Eskalation läuft!",
-      "💀 Saufa Saufa!",
-      "🍻 Da Hund is zua!",
-      "🚀 Trichter König!",
-      "🎉 Level Up!",
-      "🍾 Flasche leer!",
-      "🥴 Wer hat dich losgelassen?!",
-      "⚡ Festival Mode!",
-      "🧠 Gehirn OFF",
-      "🏆 Neuer Rekord!",
-      "🔥 Komplett eskaliert!",
-      "🍻 Prost!",
-      "🤯 Realität pausiert!",
-      "💥 BOOM!"
+const funnyTexts = [
+  "🍺 Du Trichter-Legende!",
+  "🔥 I glaub es eskaliert komplett!",
+  "💀 Saufa Saufa Saufa?!",
+  "🍻 Da Hund is zua!",
+  "🚀 Du bist die Trichter Königin!",
+  "🎉 So schnö hot nu nie wer trichtert",
+  "🍾 Trichter schmeckt einfach gut",
+  "🥴 Bitte ned speibn",
+  "⚡ Des geht nu schnölla oder?",
+  "🧠 Trichterin Barbara Salesch!",
+  "🏆 Saufa und vü Raucha",
+  "🔥 Einfach Orangensaft",
+  "🍻 Frag nicht was für Saft!",
+  "💅 Slay Bitch",
+  "💥 Bist du da Wirtshausfraunz?!",
+  "💥 Spast!",
+  "🥴 Wer trichtert so schnell durch Nacht und Wind?",
+  "💥 BOOM!"
+
     ];
 
     function playSound(audio) {
@@ -192,15 +196,6 @@
       // 📝 Random Text
       const msg = document.getElementById("message");
       msg.innerText = funnyTexts[Math.floor(Math.random() * funnyTexts.length)];
-
-      setTimeout(() => {
-        msg.innerText = "";
-      }, 2000);
-
-      // 🎉 5er Event
-      if (players[i].count % 5 === 0) {
-        triggerFiveEvent(i);
-      }
 
       save();
       render();
