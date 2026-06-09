@@ -10,8 +10,6 @@
       margin: 0;
       font-family: Arial, sans-serif;
       text-align: center;
-
-      /* 🟠 neues Design */
       background: linear-gradient(135deg, #ffb347, #ffcc33);
       color: #8b0000;
     }
@@ -49,7 +47,6 @@
       width: 80%;
       border-radius: 10px;
       font-size: 5vw;
-      color: #8b0000;
     }
 
     .addBtn {
@@ -81,7 +78,9 @@
 
   <input id="nameInput" placeholder="Spieler Name">
   <button onclick="addPlayer()">Spieler hinzufügen</button>
+
   <button class="alarmBtn" onclick="toggleAlarm()">🚨 Trink Alarm</button>
+  <button class="alarmBtn" onclick="manualAlarm()">🚨 Alarm manuell</button>
 
   <div id="players"></div>
 
@@ -147,6 +146,12 @@
       playSound(alarmSound);
     }
 
+    // 🔥 NEU: manueller Alarm
+    function manualAlarm() {
+      playSound(alarmSound);
+      alarmTriggered = true;
+    }
+
     function render() {
       const container = document.getElementById("players");
       container.innerHTML = "";
@@ -172,7 +177,7 @@
       if (diff === 0 && !alarmTriggered && alarmActive) {
         alarmTriggered = true;
         playSound(alarmSound);
-        alert("🚨 Hobts a hoibe Stunde kan Trichter gsoffn? Frechheit! ALARM! 🍺");
+        alert("🚨 Zeit für einen Trichter! 🍺");
       }
 
       if (diff > 0) {
